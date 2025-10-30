@@ -119,15 +119,7 @@ private int dpMaximizeScore(int currentRow, int currentCol, int remainingMoves) 
 | **Greedy** | O(n²) | Polinomial |
 | **DP** | O(n² × k) | Polinomial |
 
-### 2.2 Complejidad Espacial
-
-| Algoritmo | Complejidad | Descripción |
-|-----------|-------------|-------------|
-| **Backtracking** | O(n²) | Tablero + pila de recursión |
-| **Greedy** | O(n²) | Tablero solamente |
-| **DP** | O(n² × k) | Tablero + memoización |
-
-### 2.3 Ejemplos de Crecimiento
+### 2.2 Ejemplos de Crecimiento
 
 **Tablero 4×4:**
 - Backtracking: 8^16 ≈ 2.8 × 10^14 operaciones
@@ -272,7 +264,6 @@ private int dpMaximizeScore(int currentRow, int currentCol, int remainingMoves) 
 | **Complejidad** | O(8^(n²)) | O(n²) | O(n²×k) |
 | **Garantía** | ✅ Sí | ❌ No | ✅ Sí* |
 | **Velocidad** | Lento | Muy rápido | Rápido |
-| **Memoria** | Media | Baja | Alta |
 | **Escalabilidad** | ≤5×5 | ≤100×100 | ≤50×50 |
 | **Mejor para** | Búsqueda exhaustiva | Tours rápidos | Optimización |
 

@@ -9,17 +9,17 @@ El Knight's Tour es un problema clásico de ajedrez donde un caballo debe movers
 ## 🎯 Enfoques Implementados
 
 ### 1. Backtracking (Exploración Completa)
-- **Complejidad:** O(8^(n²)) - Exponencial
+- **Complejidad Temporal:** O(8^(n²)) - Exponencial
 - **Garantía:** Sí, encuentra solución si existe
 - **Uso:** Tableros pequeños (≤5×5)
 
 ### 2. Heurística Greedy - Regla de Warnsdorff
-- **Complejidad:** O(n²) - Polinomial
+- **Complejidad Temporal:** O(n²) - Polinomial
 - **Garantía:** No, pero alta tasa de éxito
 - **Uso:** Tableros medianos y grandes (≥6×6)
 
 ### 3. Programación Dinámica
-- **Complejidad:** O(n² × k) - Polinomial
+- **Complejidad Temporal:** O(n² × k) - Polinomial
 - **Garantía:** Sí, solución óptima
 - **Uso:** Problemas de optimización con restricciones
 
@@ -71,18 +71,18 @@ java Pruebas 5
 
 ## 📊 Resultados de Rendimiento
 
-| Tamaño | Backtracking | Greedy | DP (k=8) |
-|--------|--------------|--------|----------|
-| 3×3 | ~0.05 ms | ~0.03 ms | ~0.02 ms |
-| 4×4 | ~1.5 ms | ~0.08 ms | ~0.05 ms |
-| 5×5 | ~25 ms | ~0.07 ms | ~0.08 ms |
-| 6×6 | >60 s | ~0.1 ms | ~0.2 ms |
-| 8×8 | >1 hora | ~0.05 ms | ~0.5 ms |
+| Tamaño | Backtracking | Greedy | DP (k=8) | Complejidad Temporal |
+|--------|--------------|--------|----------|---------------------|
+| 3×3 | ~0.05 ms | ~0.03 ms | ~0.02 ms | BT: O(8^(n²)), G: O(n²), DP: O(n²×k) |
+| 4×4 | ~1.5 ms | ~0.08 ms | ~0.05 ms | BT: O(8^(n²)), G: O(n²), DP: O(n²×k) |
+| 5×5 | ~25 ms | ~0.07 ms | ~0.08 ms | BT: O(8^(n²)), G: O(n²), DP: O(n²×k) |
+| 6×6 | >60 s | ~0.1 ms | ~0.2 ms | BT: O(8^(n²)), G: O(n²), DP: O(n²×k) |
+| 8×8 | >1 hora | ~0.05 ms | ~0.5 ms | BT: O(8^(n²)), G: O(n²), DP: O(n²×k) |
 
 ## 📖 Documentación
 
 - **Comparacion.md**: Comparación detallada entre los 3 algoritmos
-- **InformeComplejidad.md**: Análisis completo de complejidad temporal y espacial
+- **InformeComplejidad.md**: Análisis completo de complejidad temporal
 
 ## 🎓 Características de la Solución
 
@@ -93,14 +93,14 @@ java Pruebas 5
 - ⚠️ Complejidad exponencial
 
 ### Heurística Greedy (Warnsdorff)
-- ✅ Complejidad polinomial O(n²)
+- ✅ Complejidad temporal polinomial O(n²)
 - ✅ Extremadamente rápido
 - ✅ Determinístico
 - ⚠️ No garantiza solución
 
 ### Programación Dinámica
 - ✅ Solución óptima garantizada
-- ✅ Complejidad polinomial O(n²×k)
+- ✅ Complejidad temporal polinomial O(n²×k)
 - ✅ Memoización eficiente
 - ⚠️ Mayor uso de memoria
 

@@ -7,7 +7,7 @@
 
 ## 1. Introducción
 
-El problema del Knight's Tour consiste en encontrar un recorrido completo de un caballo de ajedrez por un tablero de n×n casillas, visitando cada casilla exactamente una vez. Este informe presenta el análisis de complejidad temporal y espacial de tres técnicas algorítmicas implementadas:
+El problema del Knight's Tour consiste en encontrar un recorrido completo de un caballo de ajedrez por un tablero de n×n casillas, visitando cada casilla exactamente una vez. Este informe presenta el análisis de complejidad temporal de tres técnicas algorítmicas implementadas:
 
 1. **Backtracking** - Exploración exhaustiva
 2. **Heurística Greedy (Warnsdorff)** - Selección local óptima
@@ -53,10 +53,6 @@ El algoritmo de backtracking explora todas las posibles secuencias de movimiento
 - Tablero 4×4: 8^16 ≈ 2.8 × 10^14 operaciones
 - Tablero 5×5: 8^25 ≈ 3.8 × 10^22 operaciones
 
-#### Complejidad Espacial: O(n²)
-- Tablero de n×n: O(n²)
-- Pila de recursión: O(n²) en el peor caso (profundidad máxima n²)
-
 ---
 
 ### 2.2 Heurística Greedy (Warnsdorff)
@@ -93,10 +89,6 @@ La heurística de Warnsdorff toma decisiones locales en cada paso sin recurrir a
 - Tablero 4×4: 16 operaciones
 - Tablero 5×5: 25 operaciones
 - Tablero 8×8: 64 operaciones
-
-#### Complejidad Espacial: O(n²)
-- Tablero de n×n: O(n²)
-- Variables auxiliares: O(1)
 
 ---
 
@@ -139,21 +131,17 @@ La programación dinámica adapta el problema a maximizar puntuación en k movim
 - Tablero 4×4: 16 × 8 = 128 operaciones
 - Tablero 5×5: 25 × 8 = 200 operaciones
 
-#### Complejidad Espacial: O(n² × k)
-- Tabla de memoización: O(n² × k)
-- Pila de recursión: O(k) en el peor caso
-
 ---
 
 ## 3. Comparación de Complejidades
 
 ### 3.1 Tabla Comparativa
 
-| Algoritmo | Complejidad Temporal | Complejidad Espacial | Tipo de Crecimiento |
-|-----------|---------------------|---------------------|---------------------|
-| **Backtracking** | O(8^(n²)) | O(n²) | Exponencial |
-| **Greedy** | O(n²) | O(n²) | Polinomial |
-| **DP** | O(n² × k) | O(n² × k) | Polinomial |
+| Algoritmo | Complejidad Temporal | Tipo de Crecimiento |
+|-----------|---------------------|---------------------|
+| **Backtracking** | O(8^(n²)) | Exponencial |
+| **Greedy** | O(n²) | Polinomial |
+| **DP** | O(n² × k) | Polinomial |
 
 ### 3.2 Análisis de Factores de Mejora
 
