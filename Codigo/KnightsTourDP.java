@@ -324,49 +324,4 @@ public class KnightsTourDP {
         }
     }
     
-    /**
-     * Función principal para demostración
-     */
-    public static void main(String[] args) {
-        System.out.println("=== KNIGHT'S TOUR DP - Maximización de Puntaje ===\n");
-        
-        // Ejemplo 1: Tablero pequeño con configuración específica
-        System.out.println("--- DEMO 1: Tablero 4x4, Deterministic Path---");
-        
-        KnightsTourDP dpSolver1 = new KnightsTourDP(4, 5);
-        dpSolver1.setCustomScores(new int[][]{
-            {5, 3, 8, 1},
-            {2, 7, 4, 9},
-            {6, 1, 3, 8},
-            {4, 9, 2, 5}
-        });
-        
-        dpSolver1.displayScores();
-        dpSolver1.solveMaximizeScore(0, 0);
-        
-        System.out.println("\n--- DEMO 2: Comparación métodos DP ---");
-        
-        KnightsTourDP dpSolver2 = new KnightsTourDP(5, 8);
-        dpSolver2.displayScores();
-        
-        long time1 = System.nanoTime();
-        dpSolver2.solveMaximizeScore(1, 1);
-        long memoTime = System.nanoTime() - time1;
-        
-        long time2 = System.nanoTime();
-        dpSolver2.solveMaximizeScoreITO(1, 1);
-        long iterTime = System.nanoTime() - time2;
-        
-        System.out.println("\n📊 COMPARACIÓN DP Methods:");
-        System.out.println("📋 Mémoisation: " + memoTime/1000 + " μs");
-        System.out.println("📈 Tabulation:  " + iterTime/1000 + " μs");
-        System.out.println("📈 Speedup ratio: " + ((double)memoTime/iterTime) + "x");
-        
-        System.out.println("\n=== CONCLUSIONES DP ===");
-        System.out.println("✅ Dynamic Programming reduces complexity exponentially");
-        System.out.println("✅ Memoization prevents recomputation of subproblems");
-        System.out.println("✅ Iterative vs Recursive perform comparably here");
-        System.out.println("✅ Maneja constraints k-movimientos optimumally");  
-        System.out.println("✅ Extension simple can switch objectives min/max efficiency");
-    }
 }
