@@ -109,6 +109,8 @@ public class KnightsTourGreedy {
     private int[] findBestNextMove(int currentRow, int currentCol) {
         int[] bestMove = null;
         int minFutureMoves = Integer.MAX_VALUE;
+        boolean foundZeroMove = false;
+        int[] zeroMove = null;
         
         // Evaluar TODOS los movimientos posibles desde la posición actual
         for (int[] move : KNIGHT_MOVES) {
@@ -120,20 +122,37 @@ public class KnightsTourGreedy {
                 // Contar cuántos movimientos futuros tendría desde esa posición
                 int futureMoves = countFutureMoves(nextRow, nextCol);
                 
-                // OPTIMIZACIÓN: Si 0 futuras acciones, esa es la mejor inmediatamente
+                // Si encontramos una casilla con 0 movimientos futuros, la guardamos
+                // pero NO la tomamos inmediatamente (podría ser un callejón sin salida)
                 if (futureMoves == 0) {
-                    return new int[]{nextRow, nextCol};
+                    foundZeroMove = true;
+                    zeroMove = new int[]{nextRow, nextCol};
+                    // Continuamos evaluando para ver si hay opciones mejores
                 }
                 
                 // Elegir el movimiento con MENOR número de futuras opciones
-                if (futureMoves < minFutureMoves) {
+                // (pero solo si tiene al menos 1 movimiento futuro)
+                if (futureMoves > 0 && futureMoves < minFutureMoves) {
                     minFutureMoves = futureMoves;
                     bestMove = new int[]{nextRow, nextCol};
                 }
             }
         }
         
-        return bestMove;
+        // Si encontramos opciones con movimientos futuros, elegir la mejor
+        if (bestMove != null) {
+            return bestMove;
+        }
+        
+        // Si NO hay opciones con movimientos futuros (futureMoves > 0),
+        // solo entonces considerar la opción con 0 movimientos
+        // (esto significa que estamos al final del tour o es la única opción)
+        if (foundZeroMove) {
+            return zeroMove;
+        }
+        
+        // No hay movimientos válidos
+        return null;
     }
     
     /**
