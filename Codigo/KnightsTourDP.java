@@ -9,12 +9,12 @@
  */
 public class KnightsTourDP {
     
-    private int[][] board;
     private int[][] scores;
     private int boardSize;
     private int maxMoves;
     
     // Memoización map para caching resultados
+    // memo[row][col][moves] = máximo score desde (row,col) con 'moves' movimientos restantes
     private int[][][] memo;
     
     // Todos los posibles movimientos del caballo (8 direcciones)
@@ -31,7 +31,6 @@ public class KnightsTourDP {
     public KnightsTourDP(int boardSize, int k) {
         this.boardSize = boardSize;
         this.maxMoves = k;
-        this.board = new int[boardSize][boardSize];
         this.scores = new int[boardSize][boardSize];
         this.memo = new int[boardSize][boardSize][k + 1];
         
@@ -49,7 +48,6 @@ public class KnightsTourDP {
             for (int j = 0; j < boardSize; j++) {
                 // Genera puntajes aleatorios entre 1-10 para prueba
                 scores[i][j] = (int)(Math.random() * 10) + 1;
-                board[i][j] = 0; // 0 = no visitado
             }
         }
     }
@@ -115,6 +113,9 @@ public class KnightsTourDP {
      * Implementación principal de Programación Dinámica con memoización
      * Encuentra el máximo puntaje recorriendo el tablero en exactamente k movimientos
      * 
+     * IMPORTANTE: Permite visitar casillas múltiples veces para maximizar el score.
+     * Esta es la diferencia clave con el Knight's Tour clásico.
+     * 
      * Complejidad: O(n^2 * m * 8) donde n = boardSize, m = maxMoves, 8 = knight moves
      * Sin DP: O(8^m) - EXPONENCIAL!
      * Con DP: O(n^2 * m) - POLINOMIAL!
@@ -125,8 +126,8 @@ public class KnightsTourDP {
      * @return máximo puntaje posible desde esta posición
      */
     private int dpMaximizeScore(int currentRow, int currentCol, int remainingMoves) {
-        // Caso base: si no quedan movimientos, retornar puntaje actual
-        if (remainingMoves <= 0) {
+        // Caso base: si no quedan movimientos, retornar solo el puntaje de la posición actual
+        if (remainingMoves == 0) {
             return scores[currentRow][currentCol];
         }
         
@@ -135,37 +136,26 @@ public class KnightsTourDP {
             return memo[currentRow][currentCol][remainingMoves];
         }
         
-        int maxScore = 0;
-        boolean foundValidMove = false;
+        // Inicializar con el score de quedarse en la posición actual
+        // (si no hay movimientos válidos desde aquí, al menos obtenemos este score)
+        int maxScore = scores[currentRow][currentCol];
         
         // Explorar todos los movimientos posibles del caballo
         for (int[] move : KNIGHT_MOVES) {
             int nextRow = currentRow + move[0];
             int nextCol = currentCol + move[1];
             
-            // Verificar si el movimiento es válido
-            if (isValidPosition(nextRow, nextCol) && !isVisited(nextRow, nextCol)) {
-                // Marcar como visitado temporáneo para recursión
-                markVisited(nextRow, nextCol);
-                
-                // Recurrencia: puntaje desde esta casilla + máximo desde siguiente
+            // Verificar si el movimiento es válido (solo verifica límites del tablero)
+            // NO verificamos visitados - permitimos volver a casillas para maximizar score
+            if (isValidPosition(nextRow, nextCol)) {
+                // Recurrencia: score de posición actual + máximo score desde la siguiente posición
+                // con (remainingMoves - 1) movimientos restantes
                 int optionScore = scores[currentRow][currentCol] + 
                                  dpMaximizeScore(nextRow, nextCol, remainingMoves - 1);
                 
                 // Maximizar sobre todas las opciones
                 maxScore = Math.max(maxScore, optionScore);
-                foundValidMove = true;
-                
-                // Desmarcar para permitir exploración de otras rutas
-                unmarkVisited(nextRow, nextCol);
             }
-        }
-        
-        // Si no hay movimientos válidos, retornar score de posición actual
-        if (!foundValidMove && remainingMoves > 1) {
-            maxScore = scores[currentRow][currentCol];
-        } else if (!foundValidMove && remainingMoves <= 1) {
-            maxScore = scores[currentRow][currentCol];
         }
         
         // Guardar resultado en memo cache
@@ -174,8 +164,11 @@ public class KnightsTourDP {
     }
     
     /**
-     * Version alternativa con programación dinámica ITERATIVA (tabulation)
+     * Versión alternativa con programación dinámica ITERATIVA (tabulation)
      * Usa bottom-up approach en lugar de memoization
+     * 
+     * NOTA: Esta implementación es CONSISTENTE con el método recursivo.
+     * Ambos permiten visitar casillas múltiples veces para maximizar el score.
      * 
      * @param startRow posición inicial fila
      * @param startCol posición inicial columna
@@ -184,26 +177,28 @@ public class KnightsTourDP {
     public int solveMaximizeScoreITO(int startRow, int startCol) {
         System.out.println("Ejecutando PD Iterativa (Tabulation)...");
         
-        // dp[i][j][k] = máximo puntaje en posición (i,j) con k movimientos restantes
+        // dp[i][j][k] = máximo puntaje desde posición (i,j) con k movimientos restantes
         int[][][] dp = new int[boardSize][boardSize][maxMoves + 1];
         
-        // Llenar tabla DP bottom-up
+        // Llenar tabla DP bottom-up (desde 0 movimientos hasta maxMoves)
         for (int move = 0; move <= maxMoves; move++) {
             for (int row = 0; row < boardSize; row++) {
                 for (int col = 0; col < boardSize; col++) {
                     
                     if (move == 0) {
-                        // Caso base: 0 movimientos restantes
+                        // Caso base: 0 movimientos restantes = solo score de posición actual
                         dp[row][col][move] = scores[row][col];
                     } else {
-                        // DP recurrence: max from all valid knight moves
+                        // Inicializar con score de posición actual (caso: no moverse)
                         int maxScore = scores[row][col];
                         
+                        // Explorar todos los movimientos válidos del caballo
                         for (int[] knightMove : KNIGHT_MOVES) {
                             int nextRow = row + knightMove[0];
                             int nextCol = col + knightMove[1];
                             
                             if (isValidPosition(nextRow, nextCol)) {
+                                // Recurrencia: score actual + máximo desde siguiente posición
                                 maxScore = Math.max(maxScore, 
                                     scores[row][col] + dp[nextRow][nextCol][move - 1]);
                             }
@@ -221,31 +216,16 @@ public class KnightsTourDP {
     }
     
     /**
-     * Muestra el camino óptimo que lleva al máximo puntaje
-     * Utiliza reconstructión backtracking del cache de memo
+     * Muestra información sobre el camino óptimo que lleva al máximo puntaje
+     * Nota: La reconstrucción completa del camino requiere almacenar decisiones,
+     * no solo los valores óptimos. Por simplicidad, mostramos la información disponible.
      */
     private void showOptimalPath(int startRow, int startCol) {
         System.out.println("--- Análisis de Path Óptimo ---");
-        
-        // Limpiar tabla de visitados para camino evaluación
-        clearVisited();
-        
-        // Simular camino con DP decisión subóptima
-        int[][][] optimalPath = simulateOptimalPath(startRow, startCol, maxMoves);
-        
-        displayPath(optimalPath);
-    }
-    
-    /**
-     * Simula el camino óptimo reconstruyendo desde DP cache
-     */
-    private int[][][] simulateOptimalPath(int startRow, int startCol, int movesLeft) {
-        // Simplified reconstruction (for demo/visualization purposes)
-        int maxScoreCurrent = memo[startRow][startCol][movesLeft];
-        
+        int maxScoreCurrent = memo[startRow][startCol][maxMoves];
         System.out.println("Puntuación máxima desde (" + startRow + "," + startCol + 
-                         ") con " + movesLeft + " movimientos: " + maxScoreCurrent);
-        return null; // Full reconstruction omitted in demo
+                         ") con " + maxMoves + " movimientos: " + maxScoreCurrent);
+        System.out.println("(Reconstrucción completa del camino requiere almacenar decisiones en memo)");
     }
     
     /**
@@ -279,49 +259,14 @@ public class KnightsTourDP {
         System.out.println();
     }
     
-    /**
-     * Muestra estado del camino siendo analizado
-     */
-    private void displayPath(int[][][] path) {
-        System.out.println("Estado del camino DP:");
-        for (int i = 0; i < boardSize; i++) {
-            for (int j = 0; j < boardSize; j++) {
-                if (board[i][j] == 1) {
-                    System.out.print("√ ");
-                } else {
-                    System.out.print(". ");
-                }
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
-    
     // Helper methods ---------------------------------------------------
     
+    /**
+     * Verifica si una posición está dentro de los límites del tablero
+     */
     private boolean isValidPosition(int row, int col) {
         return row >= 0 && row < boardSize && 
                col >= 0 && col < boardSize;
-    }
-    
-    private boolean isVisited(int row, int col) {
-        return board[row][col] == 1;
-    }
-    
-    private void markVisited(int row, int col) {
-        board[row][col] = 1;
-    }
-    
-    private void unmarkVisited(int row, int col) {
-        board[row][col] = 0;
-    }
-    
-    private void clearVisited() {
-        for (int i = 0; i < boardSize; i++) {
-            for (int j = 0; j < boardSize; j++) {
-                board[i][j] = 0;
-            }
-        }
     }
     
 }

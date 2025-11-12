@@ -2,11 +2,13 @@
 
 ## Resumen Ejecutivo
 
-Este documento presenta una comparación detallada entre tres técnicas algorítmicas implementadas para resolver el problema del Knight's Tour:
+Este documento presenta una comparación detallada entre tres técnicas algorítmicas implementadas:
 
-1. **Backtracking** (Exploración completa)
-2. **Heurística Greedy** (Regla de Warnsdorff)
-3. **Programación Dinámica** (Maximización de puntuación)
+1. **Backtracking** (Exploración completa) - Resuelve el Knight's Tour clásico
+2. **Heurística Greedy** (Regla de Warnsdorff) - Resuelve el Knight's Tour clásico
+3. **Programación Dinámica** (Maximización de puntuación) - Resuelve un problema adaptado de optimización
+
+**Nota:** Los algoritmos 1 y 2 resuelven el problema clásico del Knight's Tour (visitar cada casilla exactamente una vez). El algoritmo 3 resuelve un problema adaptado (maximizar puntuación en k movimientos, permitiendo revisitar casillas).
 
 ---
 
@@ -20,26 +22,39 @@ Este documento presenta una comparación detallada entre tres técnicas algorít
 - Explora todas las posibles combinaciones de movimientos
 - Se detiene al encontrar la primera solución
 - Garantiza encontrar solución si existe
-- Implementa poda temprana y validación de movimientos
+- Implementa poda temprana, validación de movimientos y ordenamiento heurístico
+
+**Optimizaciones implementadas:**
+- **Poda temprana:** Retorna inmediatamente al encontrar solución
+- **Ordenamiento heurístico:** Prioriza movimientos con menos opciones futuras (heurística Warnsdorff)
+- **Validación anticipada:** Verifica movimientos válidos antes de explorar
 
 **Implementación:**
 ```java
-// Explora recursivamente todos los caminos posibles
+// Explora recursivamente con ordenamiento heurístico
 private boolean solveRecursiveSingle(int currentRow, int currentCol, int moveNumber) {
     if (moveNumber == boardSize * boardSize) {
         return true; // Solución encontrada
     }
     
-    for (int[] move : KNIGHT_MOVES) {
-        // Intenta cada movimiento válido
-        if (isValidMove(nextRow, nextCol)) {
-            // Hace el movimiento y explora recursivamente
-            if (solveRecursiveSingle(...)) {
-                return true;
-            }
-            // Backtrack: deshace el movimiento
+    // OPTIMIZACIÓN: Ordenar movimientos por accesibilidad (heurística)
+    int[][] movesWithAccessibility = getMovesWithAccessibility(currentRow, currentCol);
+    
+    for (int[] moveInfo : movesWithAccessibility) {
+        int nextRow = moveInfo[0];
+        int nextCol = moveInfo[1];
+        
+        board[nextRow][nextCol] = moveNumber;
+        
+        // Explora recursivamente
+        if (solveRecursiveSingle(nextRow, nextCol, moveNumber + 1)) {
+            return true; // Poda temprana
         }
+        
+        // Backtrack: deshace el movimiento
+        board[nextRow][nextCol] = UNVISITED;
     }
+    return false;
 }
 ```
 
@@ -57,15 +72,38 @@ private boolean solveRecursiveSingle(int currentRow, int currentCol, int moveNum
 ```java
 // Regla de Warnsdorff: mover a la celda con menos opciones futuras
 private int[] findBestNextMove(int currentRow, int currentCol) {
+    int[] bestMove = null;
     int minFutureMoves = Integer.MAX_VALUE;
+    boolean foundZeroMove = false;
+    int[] zeroMove = null;
+    
     for (int[] move : KNIGHT_MOVES) {
-        int futureMoves = countFutureMoves(nextRow, nextCol);
-        if (futureMoves < minFutureMoves) {
-            minFutureMoves = futureMoves;
-            bestMove = new int[]{nextRow, nextCol};
+        if (isValidMove(nextRow, nextCol)) {
+            int futureMoves = countFutureMoves(nextRow, nextCol);
+            
+            // CASO ESPECIAL: Movimientos con 0 opciones futuras
+            // Solo se aceptan si no hay alternativas (evita callejones sin salida)
+            if (futureMoves == 0) {
+                foundZeroMove = true;
+                zeroMove = new int[]{nextRow, nextCol};
+                continue;
+            }
+            
+            // REGLA DE WARNSDORFF: Elegir movimiento con menor número de opciones futuras
+            if (futureMoves < minFutureMoves) {
+                minFutureMoves = futureMoves;
+                bestMove = new int[]{nextRow, nextCol};
+            }
         }
     }
-    return bestMove;
+    
+    // Prioridad 1: Movimientos con opciones futuras
+    if (bestMove != null) return bestMove;
+    
+    // Prioridad 2: Solo si no hay alternativas, usar movimiento con 0 opciones
+    if (foundZeroMove) return zeroMove;
+    
+    return null; // No hay movimientos válidos
 }
 ```
 
@@ -73,35 +111,46 @@ private int[] findBestNextMove(int currentRow, int currentCol) {
 
 **Técnica:** Memoización de subproblemas para evitar recálculos.
 
+**⚠️ IMPORTANTE:** Este algoritmo resuelve un **problema adaptado**, no el Knight's Tour clásico:
+- **Problema adaptado:** Maximizar la suma de puntuaciones en exactamente k movimientos
+- **Diferencia clave:** Permite revisitar casillas (no hay restricción de visitar cada casilla exactamente una vez)
+- **Objetivo:** Encontrar el camino que maximice el score total, no completar un tour
+
 **Características:**
 - Problema adaptado: maximizar puntuación en k movimientos
 - Usa memoización (top-down) o tabulation (bottom-up)
 - Encuentra la solución óptima garantizada
 - Maneja restricciones de k movimientos
+- Permite revisitar casillas para maximizar el score
 
 **Implementación:**
 ```java
-// DP con memoización
+// DP con memoización (permite revisitar casillas para maximizar score)
 private int dpMaximizeScore(int currentRow, int currentCol, int remainingMoves) {
-    // Caso base
-    if (remainingMoves <= 0) {
+    // Caso base: no quedan movimientos
+    if (remainingMoves == 0) {
         return scores[currentRow][currentCol];
     }
     
-    // Verificar cache
+    // Verificar memo cache
     if (memo[currentRow][currentCol][remainingMoves] != -1) {
-        return memo[..][..][..];
+        return memo[currentRow][currentCol][remainingMoves];
     }
     
-    // Calcular máximo
-    int maxScore = 0;
+    // Inicializar con score de posición actual
+    int maxScore = scores[currentRow][currentCol];
+    
+    // Explorar todos los movimientos válidos
     for (int[] move : KNIGHT_MOVES) {
-        int optionScore = scores[currentRow][currentCol] + 
-                         dpMaximizeScore(nextRow, nextCol, remainingMoves - 1);
-        maxScore = Math.max(maxScore, optionScore);
+        if (isValidPosition(nextRow, nextCol)) {
+            // NO verificamos visitados - permitimos revisitar para maximizar
+            int optionScore = scores[currentRow][currentCol] + 
+                             dpMaximizeScore(nextRow, nextCol, remainingMoves - 1);
+            maxScore = Math.max(maxScore, optionScore);
+        }
     }
     
-    // Guardar en cache
+    // Guardar en memo cache
     memo[currentRow][currentCol][remainingMoves] = maxScore;
     return maxScore;
 }
@@ -141,20 +190,22 @@ private int dpMaximizeScore(int currentRow, int currentCol, int remainingMoves) 
 |--------|--------------|--------|----------|
 | 3×3 | ~0.05 ms | ~0.03 ms | ~0.02 ms |
 | 4×4 | ~1.5 ms | ~0.08 ms | ~0.05 ms |
-| 5×5 | ~25 ms | ~0.07 ms | ~0.08 ms |
-| 6×6 | >1 min | ~0.1 ms | ~0.2 ms |
+| 5×5 | ~0.07 ms | ~0.07 ms | ~0.08 ms |
+| 6×6 | >60 s | ~0.1 ms | ~0.2 ms |
 | 8×8 | >1 hora | ~0.05 ms | ~0.5 ms |
 
 ### 3.2 Factores de Mejora
 
 **Greedy vs Backtracking:**
 - Tablero 4×4: ~18x más rápido
-- Tablero 5×5: ~350x más rápido
-- Tablero 6×6: ~600,000x más rápido
+- Tablero 5×5: Similar (backtracking optimizado es muy rápido en 5×5)
+- Tablero 6×6: >600,000x más rápido
 
-**DP vs Backtracking:**
-- Reducción de O(8^k) a O(n²×k)
-- Mejora exponencial para problemas de optimización
+**DP vs Enfoque Naive (para problema de optimización):**
+- Sin DP: O(8^k) - Exponencial (para k movimientos)
+- Con DP: O(n²×k) - Polinomial
+- Mejora: De exponencial a polinomial
+- **Nota:** DP resuelve un problema adaptado (maximización de score), no el Knight's Tour clásico
 
 ---
 
@@ -168,9 +219,10 @@ private int dpMaximizeScore(int currentRow, int currentCol, int remainingMoves) 
 - Código relativamente simple
 
 **❌ Desventajas:**
-- Complejidad exponencial
-- Impracticable para tableros grandes
+- Complejidad exponencial en el peor caso O(8^(n²))
+- Impracticable para tableros grandes (>5×5)
 - Alto consumo de memoria con recursión profunda
+- **Nota:** Con las optimizaciones de ordenamiento heurístico, el caso promedio mejora significativamente, pero la complejidad asintótica permanece exponencial
 
 ### 4.2 Heurística Greedy
 

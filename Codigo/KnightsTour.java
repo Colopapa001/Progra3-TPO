@@ -144,6 +144,7 @@ public class KnightsTour {
     
     /**
      * Valida que las coordenadas estén dentro de los límites del tablero
+     * (sin verificar si está visitada)
      */
     private boolean isValidPosition(int row, int col) {
         return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
@@ -151,7 +152,11 @@ public class KnightsTour {
     
     /**
      * Función recursiva optimizada de backtracking para encontrar una sola solución
-     * Este método usa una estrategia de poda temprana cuando encuentra una solución
+     * OPTIMIZACIONES APLICADAS:
+     * 1. Poda temprana: retorna inmediatamente al encontrar solución
+     * 2. Ordenamiento de movimientos: prioriza movimientos con menos opciones futuras (heurística Warnsdorff)
+     * 3. Validación anticipada: verifica movimientos válidos antes de explorar
+     * 
      * @param currentRow fila actual
      * @param currentCol columna actual  
      * @param moveNumber número de movimiento actual
@@ -163,24 +168,25 @@ public class KnightsTour {
             return true; // ¡Solución encontrada!
         }
         
-        // Evaluar cada uno de los 8 posibles movimientos del caballo
-        for (int[] move : KNIGHT_MOVES) {
-            int nextRow = currentRow + move[0];
-            int nextCol = currentCol + move[1];
+        // OPTIMIZACIÓN: Ordenar movimientos por número de opciones futuras (poda heurística)
+        // Esto guía la búsqueda hacia áreas más prometedoras primero
+        int[][] movesWithAccessibility = getMovesWithAccessibility(currentRow, currentCol);
+        
+        // Evaluar movimientos ordenados por accesibilidad (menos opciones futuras primero)
+        for (int[] moveInfo : movesWithAccessibility) {
+            int nextRow = moveInfo[0];
+            int nextCol = moveInfo[1];
             
-            // Verificar si este movimiento es válido
-            if (isValidMove(nextRow, nextCol)) {
-                // Hacer el movimiento: marcar casilla con número de paso
-                board[nextRow][nextCol] = moveNumber;
-                
-                // Explorar recursivamente desde la nueva posición
-                if (solveRecursiveSingle(nextRow, nextCol, moveNumber + 1)) {
-                    return true; // ¡Solución completa encontrada!
-                }
-                
-                // Backtracking: deshacer el movimiento si no lleva a solución
-                board[nextRow][nextCol] = UNVISITED;
+            // Hacer el movimiento: marcar casilla con número de paso
+            board[nextRow][nextCol] = moveNumber;
+            
+            // Explorar recursivamente desde la nueva posición
+            if (solveRecursiveSingle(nextRow, nextCol, moveNumber + 1)) {
+                return true; // ¡Solución completa encontrada! (PODA TEMPRANA)
             }
+            
+            // Backtracking: deshacer el movimiento si no lleva a solución
+            board[nextRow][nextCol] = UNVISITED;
         }
         
         // Ningún movimiento lleva a una solución desde esta posición
@@ -188,8 +194,82 @@ public class KnightsTour {
     }
     
     /**
+     * Obtiene movimientos válidos ordenados por accesibilidad (heurística de poda)
+     * Movimientos con menos opciones futuras tienen prioridad
+     * Esto implementa una variante de la heurística de Warnsdorff para guiar el backtracking
+     * 
+     * @param currentRow fila actual
+     * @param currentCol columna actual
+     * @return array de [fila, columna, accesibilidad] ordenado por accesibilidad ascendente
+     */
+    private int[][] getMovesWithAccessibility(int currentRow, int currentCol) {
+        // Array temporal para almacenar movimientos válidos con su accesibilidad
+        int[][] validMoves = new int[KNIGHT_MOVES.length][3];
+        int validCount = 0;
+        
+        // Calcular accesibilidad para cada movimiento válido
+        for (int[] move : KNIGHT_MOVES) {
+            int nextRow = currentRow + move[0];
+            int nextCol = currentCol + move[1];
+            
+            if (isValidMove(nextRow, nextCol)) {
+                int accessibility = countFutureMoves(nextRow, nextCol);
+                validMoves[validCount][0] = nextRow;
+                validMoves[validCount][1] = nextCol;
+                validMoves[validCount][2] = accessibility;
+                validCount++;
+            }
+        }
+        
+        // Ordenar por accesibilidad (menor = mejor, más restrictivo)
+        // Usar ordenamiento por inserción simple (eficiente para arrays pequeños)
+        for (int i = 1; i < validCount; i++) {
+            int[] key = validMoves[i];
+            int j = i - 1;
+            while (j >= 0 && validMoves[j][2] > key[2]) {
+                validMoves[j + 1] = validMoves[j];
+                j--;
+            }
+            validMoves[j + 1] = key;
+        }
+        
+        // Retornar solo los movimientos válidos (sin el campo de accesibilidad)
+        int[][] result = new int[validCount][2];
+        for (int i = 0; i < validCount; i++) {
+            result[i][0] = validMoves[i][0];
+            result[i][1] = validMoves[i][1];
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Cuenta cuántos movimientos válidos hay desde una posición dada
+     * Usado para la heurística de poda (priorizar movimientos más restrictivos)
+     * 
+     * @param row fila de la posición
+     * @param col columna de la posición
+     * @return número de movimientos válidos desde esa posición
+     */
+    private int countFutureMoves(int row, int col) {
+        int count = 0;
+        for (int[] move : KNIGHT_MOVES) {
+            int nextRow = row + move[0];
+            int nextCol = col + move[1];
+            if (isValidMove(nextRow, nextCol)) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
      * Encuentra todas las soluciones posibles del problema del Caballo
      * IMPORTANTE: Para tableros grandes esto puede tomar mucho tiempo
+     * 
+     * OPTIMIZACIÓN: Usa el tablero principal y lo reinicializa después
+     * para evitar crear copias innecesarias en memoria
+     * 
      * @param startingRow fila inicial
      * @param startingCol columna inicial  
      * @return número total de soluciones encontradas
@@ -203,19 +283,17 @@ public class KnightsTour {
         
         solutionCount = 0;
         
-        // Crear una copia temporal del tablero para no modificar el tablero principal
-        int[][] tempBoard = new int[boardSize][boardSize];
-        for (int i = 0; i < boardSize; i++) {
-            for (int j = 0; j < boardSize; j++) {
-                tempBoard[i][j] = UNVISITED;
-            }
-        }
+        // Reinicializar el tablero para búsqueda limpia
+        initializeBoard();
         
         // Marcar la posición inicial como primer movimiento
-        tempBoard[startingRow][startingCol] = 0;
+        board[startingRow][startingCol] = 0;
         
         // Buscar todas las soluciones con backtracking
-        solveRecursiveAll(tempBoard, startingRow, startingCol, 1);
+        solveRecursiveAll(startingRow, startingCol, 1);
+        
+        // Reinicializar el tablero después de la búsqueda
+        initializeBoard();
         
         return solutionCount;
     }
@@ -223,12 +301,15 @@ public class KnightsTour {
     /**
      * Función recursiva de backtracking especializada en encontrar TODAS las soluciones
      * Este método no para en la primera solución sino que explora todo el árbol de posibilidades
-     * @param board tablero de trabajo (copia para no afectar resultados previos)
+     * 
+     * OPTIMIZACIÓN: Usa el tablero principal (this.board) en lugar de una copia
+     * para reducir uso de memoria. El tablero se reinicializa después de la búsqueda.
+     * 
      * @param currentRow fila actual
      * @param currentCol columna actual
      * @param moveNumber número de movimiento actual
      */
-    private void solveRecursiveAll(int[][] board, int currentRow, int currentCol, int moveNumber) {
+    private void solveRecursiveAll(int currentRow, int currentCol, int moveNumber) {
         // Condición terminal: hemos completado el recorrido completo
         if (moveNumber == boardSize * boardSize) {
             solutionCount++;
@@ -243,20 +324,19 @@ public class KnightsTour {
         }
         
         // Explorar cada movimiento posible del caballo
+        // NOTA: No ordenamos aquí para encontrar TODAS las soluciones sin sesgo
+        // (el ordenamiento podría omitir algunas soluciones equivalentes)
         for (int[] move : KNIGHT_MOVES) {
             int nextRow = currentRow + move[0];
             int nextCol = currentCol + move[1];
             
-            // Verificar si podemos hacer este movimiento
-            if (nextRow >= 0 && nextRow < boardSize && 
-                nextCol >= 0 && nextCol < boardSize && 
-                board[nextRow][nextCol] == UNVISITED) {
-                
+            // Verificar si podemos hacer este movimiento (usar método helper para consistencia)
+            if (isValidMove(nextRow, nextCol)) {
                 // Hacer el movimiento
                 board[nextRow][nextCol] = moveNumber;
                 
                 // Explorar recursivamente esta rama
-                solveRecursiveAll(board, nextRow, nextCol, moveNumber + 1);
+                solveRecursiveAll(nextRow, nextCol, moveNumber + 1);
                 
                 // Backtracking: deshacer movimiento para explorar otras opciones
                 board[nextRow][nextCol] = UNVISITED;
